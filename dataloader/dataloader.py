@@ -231,7 +231,7 @@ print("------------- Vectorization complete! -------------\n")
 
 
 
-class dataloader(data, batch_size, maxlen, dim,):
+class dataloader:
     '''
     Outputs 
     1. Sequences of dimension batch_size x maxlen x dim
@@ -265,7 +265,7 @@ class dataloader(data, batch_size, maxlen, dim,):
 		c = 1
 		for exploit in onlyfiles:
 		    # Opening JSON file
-		    f = open(directory + '/' + exploit, )
+		    f = open(data_path + '/' + exploit, )
 		    # returns JSON object as 
 		    # a dictionary
 		    data = json.load(f)
