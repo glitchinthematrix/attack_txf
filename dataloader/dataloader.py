@@ -74,7 +74,7 @@ def categorize_keywords(index, X_block, my_dict=dict()):
 #
 
 
-def phrase2vec(name, max_words=5):
+def phrase2vec(name, model, max_words=5):
 
    #Convert first character to uppercase
    name = name[0].upper() + name[1:]
@@ -104,7 +104,7 @@ def phrase2vec(name, max_words=5):
 
 
 
-def vectorize(X_block):
+def vectorize(X_block,one_hot,func_type,app_or_pri,func_class,func_io_class,n_words,max_inputs,model,dim):
 	
 	vec_list = []
 	
@@ -178,7 +178,7 @@ def vectorize(X_block):
 			offset = 0
 			
 			func_name = block[3]
-			name_embedding = phrase2vec(func_name, max_words=n_words)
+			name_embedding = phrase2vec(func_name,model, max_words=n_words)
 			vec = name_embedding.tolist()
 			
 			block_type = block[0]
@@ -270,8 +270,8 @@ class dataloader:
 			# a dictionary
 			data = json.load(f)
 			f.close()
-			print(c)
-			print(exploit)
+			#print(c)
+			#print(exploit)
 			for seq in data['SequenceArray']:
 				#print("Seqid: " + seq['seqID'])
 				curr_seq = []
@@ -302,7 +302,7 @@ class dataloader:
 
 		seq_vector_array = []
 		for seq in seq_array:
-			seq_vector_array.append(vectorize(seq))
+			seq_vector_array.append(vectorize(seq,one_hot,func_type,app_or_pri,func_class,func_io_class,n_words,max_inputs,model,self.dim))
 		
 		self.data = seq_vector_array
 		self.label = y
@@ -310,7 +310,7 @@ class dataloader:
 
 	def get_batch(self):
 	
-		sample_indices = random.sample(range(0,len(seq_vector_array)), batch_size)
+		sample_indices = random.sample(range(0,len(self.data)), self.batch_size)
 		vectors = np.zeros((self.batch_size,self.max_len,self.dim))
 		labels = np.zeros((self.batch_size,self.max_len))
 		attn_masks = np.zeros((self.batch_size,self.max_len))
@@ -318,7 +318,7 @@ class dataloader:
 
 		for i in range(len(sample_indices)):
 			index = sample_indices[i]
-			v = seq_vector_array[index]
+			v = np.asarray(self.data[index])
 			length = len(v)
 			curr_attn_mask = np.ones(length)
 			curr_time_stamp = np.arange(length)
@@ -332,14 +332,15 @@ class dataloader:
 				curr_attn_mask[i] = 0
 				curr_time_stamp.insert(0,0)
 			'''
-			if length < max_len:
-				v = np.concatenate((np.zeros(self.max_len-length,self.dim),v),dim=1)
+			if length < self.max_len:
+				#print(v.shape)
+				v = np.concatenate((np.zeros((self.max_len-length,self.dim)),v),axis=0)
 				curr_attn_mask = np.concatenate((np.zeros(self.max_len - length),curr_attn_mask))
 				curr_time_stamp = np.concatenate((np.zeros(self.max_len - length),curr_time_stamp))
 			
 			
-			tmp_label = np.zeros(maxlen)
-			tmp_label[-1] = y[index]
+			tmp_label = np.zeros(self.max_len)
+			tmp_label[-1] = self.label[index]
 			vectors[i] = v
 			labels[i] = tmp_label
 			attn_masks[i] = curr_attn_mask
